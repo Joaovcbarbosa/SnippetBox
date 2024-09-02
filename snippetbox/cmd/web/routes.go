@@ -21,6 +21,8 @@ func (app *application) routes() http.Handler {
   router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.snippetView)
 	router.HandlerFunc(http.MethodGet, "/snippet/create", app.snippetCreate)
   router.HandlerFunc(http.MethodPost, "/snippet/create", app.snippetCreatePost)
+  //Funcionalidade de exportar snippet
+  router.HandlerFunc(http.MethodGet, "/snippet/export", app.exportSnippet)
 
 
   standard := alice.New(app.recoverPanic, app.logRequest)

@@ -8,6 +8,18 @@
                 <span>#{{.ID}}</span>
             </div>
             <pre><code>{{.Content}}</code></pre>
+            <!-- Botão de Exportar Snippet -->
+            <form action="/snippet/export" method="get">
+                <input type="hidden" name="id" value="{{.ID}}">
+                <p>Exportar como:</p>
+                <input type="radio" id="txt" name="format" value="txt" checked>
+                <label for="txt">TXT</label>
+                <input type="radio" id="md" name="format" value="md">
+                <label for="md">Markdown</label>
+                <div>
+                    <button type="submit" class="btn btn-primary">Exportar</button>
+                </div>
+            </form>
             <div class='metadata'>
                 <time>Created: {{humanDate .Created}}</time>
                 <time>Expires: {{humanDate .Expires}}</time>

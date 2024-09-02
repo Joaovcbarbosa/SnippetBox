@@ -88,3 +88,51 @@ func (app *application) snippetCreatePost(w http.ResponseWriter, r *http.Request
 
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 }
+
+func (app *application) exportSnippet(w http.ResponseWriter, r *http.Request) {
+		// Obter o ID do snippet a partir da URL
+		id, err := strconv.Atoi(r.URL.Query().Get("id"))
+		if err != nil || id < 1 {
+				http.NotFound(w, r)
+				return
+		}
+
+		// Obter o snippet do banco de dados
+		snippet, err := app.snippets.Get(id)
+		if err == models.ErrNoRecord {
+				http.NotFound(w, r)
+				return
+		} else if err != nil {
+				app.serverError(w, err)
+				return
+		}
+
+		// Obter o formato escolhido pelo usuário
+		format := r.URL.Query().Get("format")
+
+		// Definir o nome do arquivo e o tipo de conteúdo baseado no formato
+		var fileName string
+		var contentType string
+		var content string
+
+		switch format {
+		case "md":
+				fileName = fmt.Sprintf("%s.md", snippet.Title)
+				contentType = "text/markdown"
+				content = fmt.Sprintf("# %s\n\n%s", snippet.Title, snippet.Content)
+		case "txt":
+				fallthrough // Se o usuário escolher txt ou se o formato não for reconhecido, usa txt como padrão
+		default:
+				fileName = fmt.Sprintf("%s.txt", snippet.Title)
+				contentType = "text/plain"
+				content = snippet.Content
+		}
+
+		w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
+		w.Header().Set("Content-Type", contentType)
+
+		// Escrever o conteúdo do snippet no response
+		w.Write([]byte(content))
+}
+
+
