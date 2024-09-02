@@ -24,6 +24,10 @@ func (app *application) routes() http.Handler {
   //Funcionalidade de exportar snippet
   router.HandlerFunc(http.MethodGet, "/snippet/export", app.exportSnippet)
 
+  router.HandlerFunc(http.MethodGet, "/snippet/favorite", app.favoriteSnippet)
+  router.HandlerFunc(http.MethodGet, "/snippet/unfavorite", app.unfavoriteSnippet)
+  router.HandlerFunc(http.MethodGet, "/snippet/favorites", app.listFavorites)
+
 
   standard := alice.New(app.recoverPanic, app.logRequest)
   

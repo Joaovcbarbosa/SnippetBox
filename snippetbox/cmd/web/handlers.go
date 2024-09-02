@@ -26,28 +26,35 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
-	params := httprouter.ParamsFromContext(r.Context())
+		params := httprouter.ParamsFromContext(r.Context())
 
-	id, err := strconv.Atoi(params.ByName("id"))
-	if err != nil || id < 1 {
-		app.notFound(w)
-		return
-	}
-
-	snippet, err := app.snippets.Get(id)
-	if err != nil {
-		if errors.Is(err, models.ErrNoRecord) {
-			app.notFound(w)
-		} else {
-			app.serverError(w, err)
+		id, err := strconv.Atoi(params.ByName("id"))
+		if err != nil || id < 1 {
+				app.notFound(w)
+				return
 		}
-		return
-	}
 
-	data := app.newTemplateData()
-	data.Snippet = snippet
+		snippet, err := app.snippets.Get(id)
+		if err != nil {
+				if errors.Is(err, models.ErrNoRecord) {
+						app.notFound(w)
+				} else {
+						app.serverError(w, err)
+				}
+				return
+		}
 
-	app.render(w, http.StatusOK, "view.tmpl", data)
+		isFavorite, err := app.favorites.IsFavorite(id)
+		if err != nil {
+				app.serverError(w, err)
+				return
+		}
+
+		data := app.newTemplateData()
+		data.Snippet = snippet
+		data.IsFavorite = isFavorite // Popula o campo IsFavorite
+
+		app.render(w, http.StatusOK, "view.tmpl", data)
 }
 
 func (app *application) snippetCreate(w http.ResponseWriter, r *http.Request) {
@@ -133,6 +140,52 @@ func (app *application) exportSnippet(w http.ResponseWriter, r *http.Request) {
 
 		// Escrever o conteúdo do snippet no response
 		w.Write([]byte(content))
+}
+
+func (app *application) favoriteSnippet(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil || id < 1 {
+			http.NotFound(w, r)
+			return
+	}
+
+	err = app.favorites.Insert(id)
+	if err != nil {
+			app.serverError(w, err)
+			return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+}
+
+func (app *application) unfavoriteSnippet(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	if err != nil || id < 1 {
+			http.NotFound(w, r)
+			return
+	}
+
+	err = app.favorites.Delete(id)
+	if err != nil {
+			app.serverError(w, err)
+			return
+	}
+
+	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
+}
+
+func (app *application) listFavorites(w http.ResponseWriter, r *http.Request) {
+		snippets, err := app.favorites.GetAll()
+		if err != nil {
+				app.serverError(w, err)
+				return
+		}
+
+		data := &templateData{
+				Snippets: snippets,
+		}
+
+	app.render(w, http.StatusOK, "favorites.tmpl", data)
 }
 
 
